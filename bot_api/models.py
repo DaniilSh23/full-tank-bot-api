@@ -83,6 +83,7 @@ class Order(models.Model):
 
 class OrderArchive(models.Model):
     '''Модель для архива заказов, которые были: оплачены --> выполнены --> получены.'''
+
     order_id_before_receiving = models.IntegerField(verbose_name='ID заказа перед получением клиентом')
     user_tlg_id = models.CharField(max_length=20, verbose_name='ID пользователя телеграм')
     datetime = models.DateTimeField(auto_now_add=True, verbose_name='Дата и время заказа')
@@ -101,8 +102,20 @@ class OrderArchive(models.Model):
         return self.user_tlg_id
 
 
+class PaidOrder(models.Model):
+    '''Модель для данных об оплате заказа.'''
 
+    order_id = models.CharField(verbose_name='номер заказа', max_length=50)
+    total_price = models.FloatField(verbose_name='Итоговая сумма заказа')
+    tlg_payment_charge_id = models.CharField(verbose_name='ID списания(телеграм)', max_length=200)
+    provider_payment_charge_id = models.CharField(verbose_name='ID списания(банк)', max_length=200)
+    datetime = models.DateTimeField(auto_now_add=True, verbose_name='Дата и время')
 
+    class Meta:
+        ordering = ['-datetime']
+        db_table = 'Данные об оплате заказов'
+        verbose_name = 'Данные об оплате заказов'
+        verbose_name_plural = 'Данные об оплате заказов'
 
 
 
