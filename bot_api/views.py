@@ -2,8 +2,9 @@ from rest_framework import status, generics
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from bot_api.models import Categories, Items, OrderBasket, Order
-from bot_api.serializers import ItemsSerializer, CategoriesSerializer, OrderBasketSerializer, OrderSerializer
+from bot_api.models import Categories, Items, OrderBasket, Order, PaidOrder, OrderArchive
+from bot_api.serializers import ItemsSerializer, CategoriesSerializer, OrderBasketSerializer, OrderSerializer, \
+    PaidOrderSerializer, OrderArchiveSerializer
 
 
 # 1
@@ -144,17 +145,27 @@ class OrdersView(APIView):
         '''Получение списка заказов для конкретного пользователя. Передать /?user_tlg_id=....'''
 
         user_tlg_id = request.query_params.get('user_tlg_id')
+        order_id = request.query_params.get('order_id')
+
         if user_tlg_id:
             orders = Order.objects.filter(user_tlg_id=user_tlg_id)
             orders_serializer = OrderSerializer(orders, many=True).data
             return Response(orders_serializer, status.HTTP_200_OK)
+
+        elif order_id:
+            order = Order.objects.get(id=order_id)
+            orders_serializer = OrderSerializer(order, many=False).data
+            return Response(orders_serializer, status.HTTP_200_OK)
+
         return Response(status.HTTP_400_BAD_REQUEST)
 
     def post(self, request, format=None):
         orders_pk = request.data.get('pk')
+        print(f'pk FROM REQ: {orders_pk}')
         serializer = OrderSerializer(data=request.data)
-
+        print(f'СЕРИАЛАЙЗЕР ЕБАНЫЙ: {serializer}')
         if serializer.is_valid():
+            print('VALIDATION COMPLETE')
             # хз почему, но когда использовал данные из сериализатора ничего не выходило
             order_object = Order.objects.update_or_create(pk=orders_pk, defaults={
                 'user_tlg_id': request.data.get('user_tlg_id'),
@@ -165,7 +176,9 @@ class OrdersView(APIView):
             })
 
             result_object = OrderSerializer(order_object[0]).data
-            return Response(result_object, status.HTTP_201_CREATED)
+            print(f'ОТДАЁМ БОТУ: {result_object}')
+            return Response(result_object, status.HTTP_200_OK)
+        print('SEND 400')
         return Response(status.HTTP_400_BAD_REQUEST)
 
 
@@ -220,3 +233,43 @@ class ItemsDetailView(APIView):
         item_object = Items.objects.get(pk=item_id)
         result_object = ItemsSerializer(item_object, many=False).data
         return Response(result_object, status.HTTP_200_OK)
+
+
+# 10
+class PaidOrderView(APIView):
+    '''Представление для работы с моделью данных об оплате заказа.'''
+
+    def post(self, request, format=None):
+        serializer = PaidOrderSerializer(data=request.data)
+        if serializer.is_valid():
+            PaidOrder.objects.create(
+                    order_id=serializer.data.get('order_id'),
+                    total_price=serializer.data.get('total_price'),
+                    tlg_payment_charge_id=serializer.data.get('tlg_payment_charge_id'),
+                    provider_payment_charge_id=serializer.data.get('provider_payment_charge_id'),
+                    customer_name=serializer.data.get('customer_name'),
+                    customer_telephone_number=serializer.data.get('customer_telephone_number'),
+            )
+            return Response(status.HTTP_200_OK)
+        return Response(status.HTTP_400_BAD_REQUEST)
+
+
+class OrderArchiveView(APIView):
+    '''Представление для работы с моделью архива заказов.'''
+
+    def post(self, request, format=None):
+        serializer = OrderArchiveSerializer(data=request.data)
+        if serializer.is_valid():
+            order_id = serializer.data.get('order_id_before_receiving')
+            print(f'ID {order_id}')
+            OrderArchive.objects.create(
+                order_id_before_receiving=serializer.data.get('order_id_before_receiving'),
+                user_tlg_id=serializer.data.get('user_tlg_id'),
+                pay_status=serializer.data.get('pay_status'),
+                execution_status=serializer.data.get('execution_status'),
+                order_items=serializer.data.get('order_items'),
+                result_orders_price=serializer.data.get('result_orders_price'),
+            )
+            Order.objects.get(pk=order_id).delete()
+            return Response(status.HTTP_200_OK)
+        return Response(status.HTTP_400_BAD_REQUEST)

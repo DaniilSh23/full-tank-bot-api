@@ -64,6 +64,7 @@ class OrderBasket(models.Model):
 
 class Order(models.Model):
     '''Модель для заказа'''
+
     user_tlg_id = models.CharField(max_length=20, verbose_name='ID пользователя телеграм')
     datetime = models.DateTimeField(auto_now_add=True, verbose_name='Дата и время заказа')
     pay_status = models.BooleanField(default=False, verbose_name='Статус оплаты', db_index=True, null=True, blank=True)
@@ -110,6 +111,8 @@ class PaidOrder(models.Model):
     tlg_payment_charge_id = models.CharField(verbose_name='ID списания(телеграм)', max_length=200)
     provider_payment_charge_id = models.CharField(verbose_name='ID списания(банк)', max_length=200)
     datetime = models.DateTimeField(auto_now_add=True, verbose_name='Дата и время')
+    customer_name = models.CharField(verbose_name='Имя клиента', max_length=50)
+    customer_telephone_number = models.CharField(verbose_name='Телефон клиента', max_length=20)
 
     class Meta:
         ordering = ['-datetime']
