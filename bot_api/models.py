@@ -121,4 +121,20 @@ class PaidOrder(models.Model):
         verbose_name_plural = 'Данные об оплате заказов'
 
 
+class BotUsers(models.Model):
+    '''Пользователи бота'''
+
+    user_tlg_id = models.CharField(verbose_name='ID телеграма пользователя', max_length=50, db_index=True)
+    user_tlg_name = models.CharField(verbose_name='Имя пользователя в телеграме', max_length=100)
+
+    class Meta:
+        ordering = ['id']
+        db_table = 'Пользователи'
+        verbose_name = 'Пользователь'
+        verbose_name_plural = 'Пользователи'
+
+    def __str__(self):
+        return self.user_tlg_id
+
+
 
